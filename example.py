@@ -559,7 +559,8 @@ def main():
     print('[+] Locale is ' + args.locale)
     pokemonsJSON = json.load(
         open(path + '/locales/pokemon.' + args.locale + '.json'))
-
+    interesting = json.load(
+        open(path + '/locales/interesting.' + args.locale + '.json'))
     if args.debug:
         global DEBUG
         DEBUG = True
@@ -610,7 +611,7 @@ def main():
         (x, y) = (x + dx, y + dy)
 
         process_step(args, api_endpoint, access_token, profile_response,
-                     pokemonsJSON, ignore, only)
+                     pokemonsJSON, ignore, only, interesting)
 
         print('Completed: ' + str(
             ((step+1) + pos * .25 - .25) / (steplimit2) * 100) + '%')
@@ -629,7 +630,7 @@ def main():
 
 
 def process_step(args, api_endpoint, access_token, profile_response,
-                 pokemonsJSON, ignore, only):
+                 pokemonsJSON, ignore, only, interesting):
     print('[+] Searching for Pokemon at location {} {}'.format(FLOAT_LAT, FLOAT_LONG))
     origin = LatLng.from_degrees(FLOAT_LAT, FLOAT_LONG)
     step_lat = FLOAT_LAT
@@ -656,7 +657,7 @@ def process_step(args, api_endpoint, access_token, profile_response,
                 for wild in cell.WildPokemon:
                     hash = wild.SpawnPointId;
                     if hash not in seen.keys() or (seen[hash].TimeTillHiddenMs <= wild.TimeTillHiddenMs):
-                        visible.append(wild)    
+                        visible.append(wild)
                     seen[hash] = wild.TimeTillHiddenMs
                 if cell.Fort:
                     for Fort in cell.Fort:
@@ -699,6 +700,11 @@ transform_from_wgs_to_gcj(Location(Fort.Latitude, Fort.Longitude))
                 transform_from_wgs_to_gcj(Location(poke.Latitude,
                     poke.Longitude))
 
+        full_path = os.path.realpath(__file__)
+        (path, filename) = os.path.split(full_path)
+
+        if pokename in interesting and (not(poke.SpawnPointId in pokemons) or pokemons[poke.SpawnPointId]["id"] != poke.pokemon.PokemonId):
+            os.system("osascript -e 'display notification \"" + pokename + ": " + "{:.6f}".format(poke.Latitude) + ", " + "{:.6f}".format(poke.Longitude) + "\" with title \"Pokemon\"'")
         pokemons[poke.SpawnPointId] = {
             "lat": poke.Latitude,
             "lng": poke.Longitude,

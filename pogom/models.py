@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
 from peewee import Model, SqliteDatabase, InsertQuery, IntegerField,\
                    CharField, FloatField, BooleanField, DateTimeField
 from datetime import datetime
 from base64 import b64encode
 
-from .utils import get_pokemon_name
+from .utils import get_pokemon_name, get_interesting_pokemons
 from .transform import transform_from_wgs_to_gcj
 
 
@@ -81,6 +82,8 @@ def parse_map(map_dict):
     gyms = {}
 
     cells = map_dict['responses']['GET_MAP_OBJECTS']['map_cells']
+    active_encounter_ids = [p['encounter_id'] for p in Pokemon.get_active()]
+    interesting = get_interesting_pokemons()
     for cell in cells:
         for p in cell.get('wild_pokemons', []):
             pokemons[p['encounter_id']] = {
@@ -93,6 +96,9 @@ def parse_map(map_dict):
                     (p['last_modified_timestamp_ms'] +
                      p['time_till_hidden_ms']) / 1000.0)
             }
+
+            if get_pokemon_name(p['pokemon_data']['pokemon_id']) in interesting and not(b64encode(str(p['encounter_id'])) in active_encounter_ids):
+                    os.system("osascript -e 'display notification \"" + get_pokemon_name(p['pokemon_data']['pokemon_id']) + ": " + "{:.6f}".format(p['latitude']) + ", " + "{:.6f}".format(p['longitude']) + "\" with title \"Pokemon\"'")
 
         for f in cell.get('forts', []):
             if f.get('type') == 1:  # Pokestops

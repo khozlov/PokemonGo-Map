@@ -100,6 +100,18 @@ def get_pokemon_name(pokemon_id):
 
     return get_pokemon_name.names[str(pokemon_id)]
 
+def get_interesting_pokemons():
+    if not hasattr(get_interesting_pokemons, 'names'):
+        file_path = os.path.join(
+            config['ROOT_PATH'],
+            config['LOCALES_DIR'],
+            'interesting.{}.json'.format(config['LOCALE']))
+
+        with open(file_path, 'r') as f:
+            get_interesting_pokemons.names = json.loads(f.read())
+
+    return get_interesting_pokemons.names
+
 def load_credentials(filepath):
     with open(filepath+os.path.sep+'credentials.json') as file:
         creds = json.load(file)
